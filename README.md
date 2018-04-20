@@ -1,4 +1,4 @@
-# ASU DataFest2018
+# [ASU](http://www.amstat.org/) DataFest2018
 Penn State University
 
 Team : Analytical Assassins
