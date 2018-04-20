@@ -25,6 +25,7 @@ data_modelling$jobAgeDays <- NULL
 data_modelling$jobDemand_Clicks <- NULL
 data_modelling$jobDemand_localClicks <- NULL
 
+
 #Fixing the demand index of VA and PR
 data_modelling[data_modelling$stateProvince=="VA", c("state_population")] <- 8470000
 data_modelling[data_modelling$stateProvince=="VA", c("demandIndex")] <- data_modelling[data_modelling$stateProvince=="VA",
