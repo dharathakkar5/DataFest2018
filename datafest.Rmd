@@ -179,4 +179,5 @@ data_filtered$date <- NULL
 data_growth <- summarise(data_filtered %>% group_by(normTitle,stateProvince), unique(growth_index))
 data_growth$demandBreak <- ifelse(data_growth$`unique(growth_index)`>= 0.9, "High Demand", "Not in Demand") 
 write.csv(data_growth,"C:/Users/user/Documents/PSU/DataFest/data_growth.csv")
+
 ```
