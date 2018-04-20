@@ -1,0 +1,181 @@
+---
+title: "DataFest"
+author: "Karpagalakshmi"
+date: "April 18, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Loading required libraries if not loaded already
+```{r}
+EnsurePackage<-function(x)
+{
+  x<-as.character(x)
+  if (!require(x,character.only=TRUE))
+  {
+    install.packages(pkgs=x,dependencies = TRUE)
+    require(x,character.only=TRUE)
+  }
+}
+EnsurePackage("data.table")
+EnsurePackage("dplyr")
+EnsurePackage("xlsx")
+
+```
+Loading data from indeed.com and creating as local rds to avoid reading from file again.
+```{r}
+data <- fread(file.choose(), verbose = T, showProgress = T, data.table = F,na.strings="")
+saveRDS(data,"C:/Users/user/Documents/PSU/DataFest/DataFest 2018/data.RDS")
+
+```
+Checking for NA and handling them
+```{r}
+sum.na <- sort(sapply(data, function(x){sum(is.na(x))}), decreasing = TRUE)
+data$industry <- NULL
+data$salaryCurrency <- NULL
+data[is.na(data$normTitle),c("normTitle")] <- "Unknown"
+data[is.na(data$normTitleCategory),c("normTitleCategory")] <- "Unknown"
+data[is.na(data$numReviews),c("numReviews")] <- 0
+data[is.na(data$city),c("city")] <- "Unknown"
+data[is.na(data$licenseRequiredJob),c("licenseRequiredJob")] <- 0
+data[is.na(data$supervisingJob),c("supervisingJob")] <- 0
+data[is.na(data$educationRequirements), c("educationRequirements")] <- "None"
+data[is.na(data$experienceRequired),c("experienceRequired")] <- 0
+
+
+```
+By default fread reads in all attributes as categoric. Converting the data type of numeric attrs
+```{r}
+data$avgOverallRating <- as.numeric(data$avgOverallRating)
+data$numReviews <- as.numeric(data$numReviews)
+data$descriptionCharacterLength=as.numeric(data$descriptionCharacterLength)
+data$descriptionWordCount=as.numeric(data$descriptionWordCount)
+data$experienceRequired=as.numeric(data$experienceRequired)
+data$jobAgeDays=as.numeric(data$jobAgeDays)
+data$clicks=as.numeric(data$clicks)
+data$localClicks=as.numeric(data$localClicks)
+
+```
+Defining Job title category. 58 categories- given. reduced to 17 categories based on NAICS (North American Industry Classification System)
+```{r}
+data$NAICS_Category[data$normTitleCategory%in%c("engchem","engcivil","engelectric","engid","engmech","accounting","arch","legal","management","math","project","science","tech","techhelp","techinfo","techsoftware", "veterinary")]="Professional, Scientific, and Technical Services"
+data$NAICS_Category[data$normTitleCategory%in%c("customer","personal","service")]="Other Services (except Public Administration)"
+data$NAICS_Category[data$normTitleCategory%in%c("food","hospitality")]="Accommodation and Food Services"
+data$NAICS_Category[data$normTitleCategory%in%c("hr","admin","marketing","sanitation")]="Administrative and Support and Waste Management and Remediation Services"
+data$NAICS_Category[data$normTitleCategory%in%c("arts","media","sports")]="Arts, Entertainment, and Recreation"
+data$NAICS_Category[data$normTitleCategory%in%c("care","childcarel","meddental","meddr","medinfo","mednurse","medtech","socialscience","therapy")]="Health Care and Social Assistance"
+data$NAICS_Category[data$normTitleCategory%in%c("finance","insurance")]="Finance and Insurance"
+data$NAICS_Category[data$normTitleCategory%in%c("education")]="Educational Services"
+data$NAICS_Category[data$normTitleCategory%in%c("construction","install")]="Construction"
+data$NAICS_Category[data$normTitleCategory%in%c("agriculture")]="Agriculture, Forestry, Fishing and Hunting"
+data$NAICS_Category[data$normTitleCategory%in%c("manufacturing")]="Manufacturing"
+data$NAICS_Category[data$normTitleCategory%in%c("mining")]="Mining, Quarrying, and Oil and Gas Extraction"
+data$NAICS_Category[data$normTitleCategory%in%c("military","protective")]="Public Administration"
+data$NAICS_Category[data$normTitleCategory%in%c("realestate")]="Real Estate and Rental and Leasing"
+data$NAICS_Category[data$normTitleCategory%in%c("pharmacy","retail","sales")]="Retail Trade"
+data$NAICS_Category[data$normTitleCategory%in%c("aviation","driver","transport","warehouse")]="Transportation and Warehousing"
+data$NAICS_Category[data$normTitleCategory%in%c("uncategorized")]="Unknown"
+
+```
+To find the cumulative sum of Clicks and LocalClicks. In the data given, the jobAgeDays is a cumulative number (Increases everyday or resets to 0 and then increments) while clicks and localClicks are values for each day. To make it uniform, we are getting the cumulative sum of clicks/local clicks as well, for each jobId and companyId.
+```{r}
+data <- data[order(data$date),]
+data <- data[order(data$jobId),]
+data <- data[order(data$companyId),]
+data$JobAndCompanyId <- paste0(data$jobId," ",data$companyId)
+data <- data%>%group_by(JobAndCompanyId)%>%mutate(Cumulative_clicks=cumsum(clicks))
+data <- data%>%group_by(JobAndCompanyId)%>%mutate(Cumulative_localclicks=cumsum(localClicks))
+data$JobAndCompanyId <- NULL
+data$jobDemand_Clicks <- round(data$Cumulative_clicks/(data$jobAgeDays+1),2)
+data$jobDemand_localClicks <- round(data$Cumulative_localclicks/(data$jobAgeDays+1),2)
+
+saveRDS(data,"C:/Users/user/Documents/PSU/DataFest/DataFest 2018/data_cleaned.rds")
+```
+Seggregating the data based on country code
+```{r}
+data_US <- data[data$country=="US",]
+data_CA <- data[data$country=="CA",]
+data_DE <- data[data$country=="DE",]
+```
+Reading in external data sources. US population city/state wise, Canada population City/State, Europe population City and Unemployment data for all three countries state wise.
+```{r}
+us_city_pop=read.csv("C:/Users/user/Documents/PSU/DataFest/US_city_population.csv")
+us_state_pop=read.csv("C:/Users/user/Documents/PSU/DataFest/US_population_State_wise.csv")
+us_state_unemp=read.csv("C:/Users/user/Documents/PSU/DataFest/StateUnemployment_Feb2018_US.csv")
+canada_city_pop=read.xlsx("C:/Users/user/Documents/PSU/DataFest/city_canada_population.xlsx",sheetIndex = 1)
+canada_state_pop=read.csv("C:/Users/user/Documents/PSU/DataFest/Canada_province_wise_population_2017.csv")
+canada_state_unemp=read.csv("C:/Users/user/Documents/PSU/DataFest/Canada_unemployment_rate.csv")
+euro_state_unemp=read.csv("C:/Users/user/Documents/PSU/DataFest/Euro_unemp_state.csv")
+euro_city_pop=read.csv("C:/Users/user/Documents/PSU/DataFest/Euro Population_city.csv")
+
+```
+Renaming column names before joining with cleaned data.
+```{r}
+us_city_pop <- plyr::rename(us_city_pop, c("City" = "city", "X2017.Population"="US_city_Pop"))
+us_state_pop <- plyr::rename(us_state_pop, c("State" = "stateProvince","X2018.Population"="US_State_Pop"))
+us_state_pop$Rank <- NULL
+us_state_unemp <- plyr::rename(us_state_unemp, c("State" = "stateProvince","February.2018.P."="US_State_Unemp"))
+canada_state_pop$X <- NULL
+canada_state_pop$X.1 <- NULL
+canada_state_pop <- plyr::rename(canada_state_pop, c("Provinces_and_Territories" = "stateProvince","X2017_population"="Canada_State_Pop"))
+canada_state_unemp <- plyr::rename(canada_state_pop, c("employment.rate"="Canada_State_Unemp"))
+canada_city_pop <- plyr::rename(canada_city_pop, c("X2017_population"="Canada_City_Pop"))
+euro_state_unemp <- plyr::rename(euro_state_unemp, c("geo.time" = "stateProvince","X2016"="Euro_State_Unemp"))
+euro_state_unemp$X <- NULL
+euro_city_pop <- plyr::rename(euro_city_pop, c("Name" = "city","X2018.Population"="Euro_City_Pop"))
+
+```
+Joining with cleaned data. This will give objects to create separate data files based on country and population/unemployment that will help us answer supply/demand questions
+```{r}
+us_city_pop_merged <- merge(x=data_US, y=us_city_pop,by="city")
+us_state_pop_merged<- merge(x=data_US, y=us_state_pop,by="stateProvince")
+us_state_unemp_merged <- merge(x=data_US, y=us_state_unemp,by="stateProvince")
+
+canada_state_pop_merged <- merge(x=data_CA, y=canada_state_pop,by="stateProvince")
+canada_state_unemp_merged <- merge(x=data_CA, y=canada_state_unemp, by="stateProvince")
+canada_city_pop_merged <- merge(x=data_CA, y=canada_city_pop, by="city")
+
+germany_state_unemp_merged <- merge(x=data_DE, y=euro_state_unemp, by="stateProvince",all.x = TRUE)
+germany_city_pop_merged <- merge(x=data_DE, y=euro_city_pop, by="city",all.x = TRUE)
+```
+Creating data files
+```{r}
+write.csv(us_city_pop_merged,"C:/Users/user/Documents/PSU/DataFest/us_city_pop_merged.csv")
+write.csv(us_state_pop_merged,"C:/Users/user/Documents/PSU/DataFest/us_state_pop_merged.csv")
+write.csv(us_state_unemp_merged,"C:/Users/user/Documents/PSU/DataFest/us_state_unemp_merged.csv")
+write.csv(canada_city_pop_merged,"C:/Users/user/Documents/PSU/DataFest/canada_city_pop_merged.csv")
+write.csv(canada_state_pop_merged,"C:/Users/user/Documents/PSU/DataFest/canada_state_pop_merged.csv")
+write.csv(canada_state_unemp_merged,"C:/Users/user/Documents/PSU/DataFest/canada_state_unemp_merged.csv")
+write.csv(germany_state_unemp_merged,"C:/Users/user/Documents/PSU/DataFest/germany_state_unemp_merged.csv")
+write.csv(germany_city_pop_merged,"C:/Users/user/Documents/PSU/DataFest/germany_city_pop_merged.csv")
+```
+Reading in population information of all states of all countries. Joining with original data (after cleaning) adds a state_population column. 
+```{r}
+all_state_pop <- read.csv("C:/Users/user/Documents/PSU/DataFest/StatePopALL.csv")
+all_state_pop <- plyr::rename(all_state_pop, c("StateProvince"="stateProvince", "X2018.Population"="state_population"))
+all_state_pop$X <- NULL
+data_modelling <- merge(x=data, y=all_state_pop, by="stateProvince", all.x = TRUE)
+```
+The demandIndex attribute is created by dividing the jobdemand_clicks by the state population. Basically the demand in each state is normalized based on the population in that state. (If this is not done, a densely populated state will always have more demand than a sparsely populated state since the no of clicks will be higher in a densely populated state)
+```{r}
+data_modelling$demandIndex <- data_modelling$jobDemand_Clicks/data_modelling$state_population
+saveRDS(data_modelling,"C:/Users/user/Documents/PSU/DataFest/DataFest 2018/data_modelling.rds")
+```
+To get the growth in job opportunities for each job title in each state.
+First the data is filtered to US and then the last two months of 2016 and last two months of 2017. The growth index is calculated as the difference between sum of jobs in each state in last two months of 2017 and last two months of 2016, divided by the sum of jobs in last two months of 2016.
+Jobs whose growth index is greater than or equal to 90% is categorized as High demand jobs while others are Not in Demand jobs.
+```{r}
+to_Match <- c("^2016-11","^2016-12","^2017-10","^2017-11")
+data_filtered <- data[data$country=="US",]
+data_filtered <- data[(data$date %in% grep(paste(to_Match, collapse="|"),data$date, value=TRUE)),c("normTitle","stateProvince","date")]
+data_filtered <- data_filtered%>%group_by(normTitle,stateProvince)%>%mutate(
+                                                            growth_index=(sum(date %in% grep("^2017",date, value=TRUE)) - 
+                                                                              sum(date %in% grep("^2016",date, value=TRUE)))/(sum(date %in% grep("^2016",date, value=TRUE))+1)
+                                                            )
+data_filtered$date <- NULL
+data_growth <- summarise(data_filtered %>% group_by(normTitle,stateProvince), unique(growth_index))
+data_growth$demandBreak <- ifelse(data_growth$`unique(growth_index)`>= 0.9, "High Demand", "Not in Demand") 
+write.csv(data_growth,"C:/Users/user/Documents/PSU/DataFest/data_growth.csv")
+```
