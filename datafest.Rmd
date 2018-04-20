@@ -23,6 +23,7 @@ EnsurePackage("data.table")
 EnsurePackage("dplyr")
 EnsurePackage("xlsx")
 
+
 ```
 Loading data from indeed.com and creating as local rds to avoid reading from file again.
 ```{r}
