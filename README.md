@@ -34,6 +34,6 @@ The job_demand in each state is normalized based on population in that state. Th
 
 3) What are the factors that the company could focus on to improve their customer base?
 
-For determing the factors that could have positive impact on the job demand/interests, we created regression models using randomForest, GBM and NeuralNet. The best results were obtained using randomForest regression with a root mean squared error value of 1.87. To handle memory issues in R while running the models, we used h2o.ai package for R.
+For determing the factors that could have positive impact on the job demand/interests, we created regression models using randomForest, GBM and NeuralNet. The target variable used is demand_index. The best results were obtained using randomForest regression with a root mean squared error value of 1.87. To handle memory issues in R while running the models, we used h2o.ai package for R.
 
 [Here](https://public.tableau.com/profile/ashish5852#!/vizhome/DataFest1/Story1?publish=yes) is a link to the Visualization.
