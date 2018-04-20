@@ -151,7 +151,7 @@ write.csv(canada_state_unemp_merged,"C:/Users/user/Documents/PSU/DataFest/canada
 write.csv(germany_state_unemp_merged,"C:/Users/user/Documents/PSU/DataFest/germany_state_unemp_merged.csv")
 write.csv(germany_city_pop_merged,"C:/Users/user/Documents/PSU/DataFest/germany_city_pop_merged.csv")
 ```
-Reading in population information of all states of all countries. Joining with original data (after cleaning) adds a state_population column. 
+Reading in population information of all states of all countries. Joining with original data (after cleaning) adds a state_population column.. 
 ```{r}
 all_state_pop <- read.csv("C:/Users/user/Documents/PSU/DataFest/StatePopALL.csv")
 all_state_pop <- plyr::rename(all_state_pop, c("StateProvince"="stateProvince", "X2018.Population"="state_population"))
