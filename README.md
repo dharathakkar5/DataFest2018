@@ -5,7 +5,7 @@ Team : Analytical Assassins
 
 Members: Karpagalakshmi Rajagopalan, Jackie Markel, Dhara Thakkar, Ashish Chauhan, Harsha Polisetty
 
-Team won the Most creative Award and emerged as Runner up from 77 teams.
+Team won the **Most creative Award** and emerged as **Runner up** from 77 teams.
 
 Data Source Provided : Indeed.com The world's largest job search engine.
 
