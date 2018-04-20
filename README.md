@@ -3,7 +3,7 @@ Penn State University
 
 Team : Analytical Assassins
 
-Members: Karpagalakshmi Rajagopalan, Jackie Markel, Dhara Thakkar, Ashish Chauhan, Harsha Polisetty
+Members: Karpagalakshmi Rajagopalan, Jackie Markle, Dhara Thakkar, Ashish Chauhan, Harsha Polisetty
 
 Team won the **Most creative Award** and emerged as **Runner up** from 77 teams.
 
