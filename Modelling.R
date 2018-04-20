@@ -9,6 +9,7 @@ EnsurePackage<-function(x)
 }
 EnsurePackage("h2o")
 
+
 data_modelling <- readRDS("C:/Users/user/Documents/PSU/DataFest/data_modelling.RDS")
 data_modelling$date <- NULL
 data_modelling$companyId <- NULL
